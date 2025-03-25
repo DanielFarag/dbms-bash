@@ -4,7 +4,6 @@ clear
 source ./modules/load
 
 function __init__(){
-    echo "Adadsd"
     setup
 
     title "Main Screen"
