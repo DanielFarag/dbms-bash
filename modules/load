@@ -7,3 +7,11 @@ source ./modules/db/connect
 source ./modules/db/create
 source ./modules/db/delete
 source ./modules/db/fetch
+source ./modules/table/fetch
+source ./modules/table/create
+source ./modules/table/drop
+source ./modules/table/menu
+source ./modules/table/data/insert
+source ./modules/table/data/delete
+source ./modules/table/data/update
+source ./modules/table/data/index
