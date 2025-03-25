@@ -1,0 +1,64 @@
+#!/bin/bash
+
+insert_table_records(){
+    local content=$(sed -n '$p' $(CURRENT_TABLE_DATA_PATH))  
+
+    local id="$(get_latest_id)"
+
+    local columns=($(fetch_table_columns))
+
+    local newRecord=()
+    
+    local length="${#columns[@]}"
+    local current=0
+
+
+
+    title "Create New Record $CURRENT_TABLE in ($CURRENT_DB)"
+    while (( current != length  )); do
+        IFS=':' read -r column type pk <<< "${columns[$current]}"
+
+        local default_value=""
+        if [[ "$pk" == "primary_key" ]]; then
+            default_value="$id"
+            read -p "$column ($type) [$default_value]: " default_value
+        else
+            read -p "$column ($type): " default_value
+        fi
+
+
+        if [[ -z "$default_value" && "$pk" == "primary_key" ]]; then
+            default_value="$id"
+        fi
+
+
+        if [[ -z "$default_value" ]]; then
+            loading "Value cannot be empty!"
+            continue
+        fi
+
+        if [[ "$type" == "int" && ! $default_value =~ ^[0-9]+$ ]]; then
+            loading "Value must be integer!"
+            continue
+        fi
+
+        if [[ "$type" == "string" && ! $default_value =~ ^[A-Za-z0-9\ ]+$ ]]; then
+            loading "Value must be alphanmeric string [spaces allowed]!"
+            continue
+        fi
+
+        ((current++))
+
+        newRecord+=("$default_value")
+    done
+
+    if (( length  != current )); then
+        return
+    fi
+
+    loading "New Record Inserted (${newRecord[*]})"
+
+    IFS=":"  
+    echo "${newRecord[*]}" >> $(CURRENT_TABLE_DATA_PATH)
+    unset IFS
+}
