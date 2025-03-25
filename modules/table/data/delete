@@ -1,0 +1,36 @@
+#!/bin/bash
+
+delete_table_records(){
+
+    title "Delete record from table: $CURRENT_TABLE ( $CURRENT_DB )"
+
+    local pk_name="$(get_primary_key)"
+
+    read -p "$pk_name: " pk_value
+
+    if [[ "$pk_value" -eq "0" ]]; then
+        return
+    fi
+
+    local record="$(get_rows_by_keys "$pk_name=$pk_value")"
+
+    if [[ -z "$record" ]]; then
+        loading "$pk_name does not exist"
+        delete_table_records
+        return
+    fi
+
+
+    echo Delete Record \( $record \)
+    
+    read -p "Confirm Delete [y-n]: " confirm
+
+    title "Record:  $record "
+    if [[ "$confirm" =~ ^(y|Y)$ ]]; then
+        sed -i /^$record$/d $(CURRENT_TABLE_DATA_PATH)
+
+        loading "Record Deleted"
+    else
+        loading "Request declined"
+    fi
+}
