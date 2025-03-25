@@ -1,0 +1,7 @@
+storage
+*.txt
+*.pdf
+test
+tasks
+__*
+backup
