@@ -1,0 +1,34 @@
+#!/bin/bash
+
+create_database() {
+
+    title "Create New Database"
+    read -p "name: " dbname
+
+    dbname="$(echo "$dbname" | sed 's/^ *//;s/ *$//')"  # trimg [start and end]
+
+
+    if [[ ! "$dbname" =~ ^[a-z]+$ ]]; then
+
+        loading "Database name must contain only lowercase alphabetical letters"
+    
+        create_database ## Recall the function [ Recursion ]
+
+        return
+    fi
+
+
+    local path="$STORAGE_PATH/$dbname"
+
+
+    if [[ -d "$path" ]]; then
+        loading "$Database Already exists"
+
+        create_database ## Recall the function [ Recursion ]
+        return
+    fi
+
+    mkdir -p "$path"
+    
+    loading "Database $dbname created successfully"
+}
