@@ -1,0 +1,128 @@
+#!/bin/bash
+
+title() {
+    clear
+    echo "Welcome to our DB Management System:"
+    echo -e "\n===== $1 ====="
+}
+
+
+setup() {
+    if [[ ! -d ./$STORAGE_PATH ]]; then
+        mkdir ./$STORAGE_PATH
+    fi
+}
+
+
+databases() {
+    for dir in $STORAGE_PATH/*; do
+        [ -e "$dir" ] || continue
+
+        basename "$dir"
+    done
+}
+
+tables() {
+    for dir in $(CURRENT_DB_PATH)/*; do
+        [ -e "$dir" ] || continue
+        basename "$dir"
+    done
+}
+
+
+fetch_table_columns() {
+    awk -F':' '{ print $1 ":" $2 ":" $3 }' "$(CURRENT_TABLE_META_PATH)"
+}
+
+# pk may be inserted in different order 
+# we need to identify the correct position of the pk in the meta file
+get_primary_key() {
+    awk -F':' '{
+        if($NF == "primary_key"){
+            print $1
+        }
+    }' "$(CURRENT_TABLE_META_PATH)"
+}
+
+# given column name, i need t o get its location
+get_column_index(){
+    local column="$1"
+
+    mapfile -t data < <(fetch_table_columns)
+
+    local length="${#data[@]}"
+
+    for ((i=0; i<length; i++)); do
+        if [[ "${data[i]}" =~ ^$column":"  ]]; then
+            echo "$i"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+
+# retrieve primary key column, its location in the data file and increment the latest record by one
+get_latest_id() {
+
+    pk="$(get_primary_key)"
+
+    pk_index="$(get_column_index $pk)"
+
+    awk  -F':' -v idx="$pk_index" 'END {
+        print $(idx+1)+1
+    }'  "$(CURRENT_TABLE_DATA_PATH)"
+}
+
+
+# Filter data based on N columns
+get_rows_by_keys(){
+    local data=("$@")
+    local length="$#"
+    local columes=""
+
+    for((i=0; i<length; i++));do
+        IFS="=" read -r key value <<< "${data[i]}"
+        db_key_index="$(get_column_index $key)"
+        columes+="col_$db_key_index=$value "
+    done
+
+    awk -F: '
+        BEGIN {
+            total=1
+            for (i = 1; i < ARGC - 1; i++) {
+                split(ARGV[i], cond, "=");
+                gsub("col_", "", cond[1]);   
+                col[total] = cond[1]+1;      
+                val[total] = cond[2];
+                total++;
+            }
+        }
+        {
+            matchAll = 1;
+            for (i = 1; i < total; i++) {
+                if ($col[i] != val[i]) matchAll = 0;
+            }
+            if (matchAll) print $0;
+        }' $columes $(CURRENT_TABLE_DATA_PATH)
+}
+
+loading() {
+    echo -n "$1 "
+    for i in {1..5}; do
+        echo -n "."
+        sleep 0.4
+    done
+    echo
+}
+
+
+print_menu(){
+    local i=1
+
+    for action in "$@"; do
+        printf "%d) %s\n" "$i" "$action"
+        ((i++))
+    done
+}
