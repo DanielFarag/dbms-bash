@@ -1,0 +1,20 @@
+#!/bin/bash
+
+list_databases() {
+    local _databases="$(databases)"
+
+    title "Display Databases"
+
+    if [[ -z "$_databases" ]]; then
+        loading "No databases found"
+        return
+    fi
+
+    local count=1
+    for db in $(databases); do
+        echo "$count) $db"
+        ((count++))
+    done
+
+    read -p "Back ..."
+}

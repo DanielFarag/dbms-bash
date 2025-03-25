@@ -1,0 +1,32 @@
+#!/bin/bash
+
+detete_database() {
+    local databases=($(databases) "Return to Main Menu")
+
+    title "Delete Database"
+
+    print_menu "${databases[@]}"
+
+    read -p "# " option
+
+    if [[  -z $option ]]; then 
+        loading "Invalid option"
+        detete_database
+    fi
+
+
+    if [[ $option -ge $((${#databases[@]})) || $option -le 0 ]]; then
+        return
+    fi
+
+    loading "${databases[option-1]} Is being deleted"
+
+    rm -r $STORAGE_PATH/${databases[option-1]}
+
+
+    if [[ $? -eq 1 ]]; then
+        loading "failed to delete: ${databases[option-1]}"
+
+        detete_database
+    fi
+}
