@@ -1,0 +1,29 @@
+#!/bin/bash
+clear
+
+source ./modules/load
+
+function __init__(){
+    echo "Adadsd"
+    setup
+
+    title "Main Screen"
+
+    local main_screen_options=("Create Database" "List Database" "Drop Database" "Connect Database" "Exit")
+    print_menu "${main_screen_options[@]}"
+
+    read -p "# " option
+    
+    case $option in
+        1) create_database ;;
+        2) list_databases ;;
+        3) detete_database ;;
+        4) connect_db ;;
+        5) loading "Exiting"; return ;;
+        *) echo "Invalid option, please try again." ;;
+    esac
+    
+    __init__
+}
+
+__init__
