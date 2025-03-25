@@ -1,0 +1,8 @@
+#!/bin/bash
+
+drop_table() {
+
+    echo "TODO: Drop Table"
+
+    read -p "# " option
+}

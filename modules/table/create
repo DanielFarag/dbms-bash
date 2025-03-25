@@ -1,0 +1,10 @@
+#!/bin/bash
+
+create_table(){
+
+
+    title "TODO: Create New Table in ($CURRENT_DB)"
+    read -p "name: " tblname
+
+    loading "Table '$tblname' created successfully!"
+}

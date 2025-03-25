@@ -1,0 +1,8 @@
+#!/bin/bash
+
+list_tables() {
+
+    echo "TODO: List Tables"
+
+    read -p "# " option
+}

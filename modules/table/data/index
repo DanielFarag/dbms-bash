@@ -1,0 +1,9 @@
+#!/bin/bash
+
+
+list_table_records(){
+    echo "TODO: display data"
+
+
+    read -p "Back ..."
+}
