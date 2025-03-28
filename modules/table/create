@@ -1,10 +1,103 @@
 #!/bin/bash
 
-create_table(){
+function create_table {
+    local table_name PK_col metadata_file data_file
+    local -a columns
+    local -A column_types
+    local column_added=false
+    local valid_pk=false
 
+    while true; do
+        read -p "Enter table name: " table_name
 
-    title "TODO: Create New Table in ($CURRENT_DB)"
-    read -p "name: " tblname
+        if ! is_valid_name "$table_name" "Table"; then
+            continue
+        fi
+        CURRENT_TABLE="$table_name"
+        metadata_file=$(CURRENT_TABLE_META_PATH)
+        data_file=$(CURRENT_TABLE_DATA_PATH)
+        if [[ -f "$metadata_file" || -f "$data_file" ]]; then
+            echo "Error: Table '$table_name' already exists!"
+            continue
+        fi
+        break
+    done
 
-    loading "Table '$tblname' created successfully!"
+    echo "Define columns for table '$table_name'. Use 'done' when finished."
+
+    while true; do
+        read -p "Add column (name:type) or 'done': " col_input
+        if [[ "$col_input" == "done" ]]; then
+            if [[ "$column_added" == false ]]; then
+                echo "Error: Please add at least one column."
+            else
+                break
+            fi
+        fi
+
+        IFS=':' read -r col_name col_type <<<"$col_input"
+
+        if [[ -z "$col_name" || -z "$col_type" ]]; then
+            echo "Error: Invalid format. Use 'name:type' (e.g., age:int)."
+            continue
+        fi
+
+        if ! is_valid_name "$col_name" "Column"; then
+            continue
+        fi
+
+        if [[ " ${columns[*]} " =~ " $col_name " ]]; then
+            echo "Error: Column '$col_name' already exists."
+            continue
+        fi
+
+        case "$col_type" in
+        1 | int) col_type="int" ;;
+        2 | string) col_type="string" ;;
+        *)
+            echo "Error: Invalid type. Use 1 (int) or 2 (string)."
+            continue
+            ;;
+        esac
+
+        columns+=("$col_name")
+        column_types["$col_name"]="$col_type"
+        column_added=true
+    done
+
+    if [[ "${#columns[@]}" -eq 0 ]]; then
+        echo "Error: No columns defined. Aborting."
+        return 1
+    fi
+
+    echo "Select a primary key column:"
+    for i in "${!columns[@]}"; do
+        echo "$((i + 1)). ${columns[$i]}"
+    done
+
+    while true; do
+        read -p "Choose primary key column: " PK_col
+        if [[ " ${columns[*]} " =~ " $PK_col " ]]; then
+            valid_pk=true
+            break
+        else
+            echo "Error: '$PK_col' is not a valid column name. Try again."
+        fi
+    done
+
+    for col in "${columns[@]}"; do
+        if [[ "$col" == "$PK_col" ]]; then
+            echo "$col:${column_types[$col]}:primary_key" >>"$metadata_file"
+        else
+            echo "$col:${column_types[$col]}" >>"$metadata_file"
+        fi
+    done
+
+    printf "%s\n" "$(
+        IFS=:
+        echo "${columns[*]}"
+    )" >"$data_file"
+
+    echo "Table '$table_name' created successfully in '$CURRENT_DB'."
+    pause
 }

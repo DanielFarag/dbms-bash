@@ -1,8 +1,30 @@
 #!/bin/bash
-
 list_tables() {
+    local _tables=($(tables) "Create Table" "Return to Databases")
 
-    echo "TODO: List Tables"
+    title "Display Tables: ($CURRENT_DB)"
+
+    print_menu "${_tables[@]}"
 
     read -p "# " option
+
+    if [[ -z $option ]]; then
+        loading "Invalid option"
+        list_tables
+    fi
+
+    if [[ $option -ge $((${#_tables[@]})) || $option -le 0 ]]; then
+        return
+    fi
+
+    case $option in
+    $((${#_tables[@]} - 1))) create_table ;;
+    *)
+        CURRENT_TABLE=${_tables[option - 1]}
+        list_table_actions
+        CURRENT_TABLE=""
+        ;;
+    esac
+
+    list_tables
 }

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-list_table_actions(){
+list_table_actions() {
     local table_options=("List Data" "Insert New Record" "Update Record" "Delete Record" "Drop Table" "Return to Tables")
 
     title "table: $CURRENT_TABLE"
@@ -10,13 +10,13 @@ list_table_actions(){
     read -p "# " type
 
     case $type in
-        1) list_table_records;;
-        2) insert_table_records;;
-        3) update_table_records;;
-        4) delete_table_records;;
-        4) drop_table;;
-        5) return ;;
-        *) loading "Invalid option, please try again." ;;
+    1) list_table_records ;;
+    2) insert_table_records ;;
+    3) update_table_records ;;
+    4) delete_table_records ;;
+    5) drop_table ;;
+    6) return ;;
+    *) loading "Invalid option, please try again." ;;
     esac
 
     list_table_actions

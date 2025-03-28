@@ -9,17 +9,17 @@ connect_db() {
 
     read -p "# " option
 
-    if [[  -z $option ]]; then 
+    if [[ -z $option ]]; then
         loading "Invalid option"
         connect_db
     fi
 
     # Break loop
-    if [[ $option -ge $((${#databases[@]})) || $option -lt 0 ]]; then 
+    if [[ $option -ge $((${#databases[@]})) || $option -lt 0 ]]; then
         return
     fi
 
-    CURRENT_DB=${databases[option-1]}
+    CURRENT_DB=${databases[option - 1]}
     list_tables
     CURRENT_DB=""
 

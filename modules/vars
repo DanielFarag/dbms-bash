@@ -5,16 +5,15 @@ export CURRENT_DB=""
 export CURRENT_TABLE=""
 export STORAGE_PATH="storage"
 
-
 # Resolve the path
 CURRENT_DB_PATH() {
     echo "$STORAGE_PATH/$CURRENT_DB"
 }
 
 CURRENT_TABLE_META_PATH() {
-    echo "$STORAGE_PATH/$CURRENT_DB/$CURRENT_TABLE/meta"
+    echo "$STORAGE_PATH/$CURRENT_DB/$CURRENT_TABLE.meta"
 }
 
 CURRENT_TABLE_DATA_PATH() {
-    echo "$STORAGE_PATH/$CURRENT_DB/$CURRENT_TABLE/data"
+    echo "$STORAGE_PATH/$CURRENT_DB/$CURRENT_TABLE.data"
 }
