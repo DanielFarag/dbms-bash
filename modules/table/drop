@@ -1,8 +1,38 @@
 #!/bin/bash
 
 drop_table() {
+    local data_file
+    data_file="$(CURRENT_TABLE_DATA_PATH)"
+    meta_file="$(CURRENT_TABLE_META_PATH)"
 
-    echo "TODO: Drop Table"
+    if [[ ! -f "$data_file" ]]; then
+        echo "Error: Table data file not found!"
+        return 1
+    fi
 
-    read -p "# " option
+    local confirm=""
+    while true; do
+        read -rp "Are you sure you want to drop the table? (y/n): " confirm
+        if [[ "$confirm" =~ ^[YyNn]$ ]]; then
+            break
+        else
+            echo "Invalid input. Please enter y or n."
+        fi
+    done
+
+    if [[ "$confirm" =~ ^[Nn]$ ]]; then
+        echo "Operation cancelled."
+        return 0
+    fi
+
+    rm -f "$data_file"
+    rm -f "$meta_file"
+
+    if [[ $? -eq 0 ]]; then
+        loading "Table dropped successfully"
+        pause
+    else
+        echo "Error: Failed to drop the table."
+        return 1
+    fi
 }
