@@ -1,10 +1,149 @@
 #!/bin/bash
 
+update_table_records() {
+    local pk_val line_number target_line pk_col pk_index metadata_file data_file
+    local target_field new_val field_name col_index
+    local -a fields non_pk_fields
+    local -A types_map col_indices updates_to_make awk_assignments
 
-update_table_records(){
-    echo "TODO: Update Record !"
+    metadata_file=$(CURRENT_TABLE_META_PATH)
+    data_file=$(CURRENT_TABLE_DATA_PATH)
 
+    if [[ ! -f "$metadata_file" || ! -f "$data_file" ]]; then
+        echo "Error: Table '$CURRENT_TABLE' data or metadata file not found."
+        return 1
+    fi
 
-    read -p "Back ..."
+    readarray -t fields < <(get_table_columns)
 
+    pk_col=$(awk -F: '$3 == "primary_key" { print $1; exit }' "$metadata_file")
+    if [[ -z "$pk_col" ]]; then
+        echo "Error: There is no primary key for table '$CURRENT_TABLE'."
+        return 1
+    fi
+
+    non_pk_fields=()
+    for idx in "${!fields[@]}"; do
+        field_name="${fields[$idx]}"
+        col_indices["$field_name"]=$((idx + 1))
+        if [[ "$field_name" != "$pk_col" ]]; then
+            non_pk_fields+=("$field_name")
+        fi
+    done
+    pk_index=${col_indices["$pk_col"]}
+
+    while IFS=':' read -r key type _; do
+        types_map["$key"]="$type"
+    done <"$metadata_file"
+
+    while true; do
+        read -rp "Enter the primary key value for column '$pk_col': " pk_val
+        if [[ -z "$pk_val" ]]; then
+            echo "Error: Primary key value cannot be empty."
+            continue
+        fi
+
+        local output
+        output=$(awk -F: -v col_idx="$pk_index" -v pk="$pk_val" \
+            '$col_idx == pk { print NR, $0; exit }' "$data_file")
+
+        if [[ -z "$output" ]]; then
+            echo "Error: No record found with '$pk_col' = '$pk_val'."
+            read -rp "Try another PK value? (y/n): " choice
+            [[ "$choice" =~ ^[Yy]$ ]] || return 1
+            continue
+        else
+            line_number=$(echo "$output" | cut -d' ' -f1)
+            target_line=$(echo "$output" | cut -d' ' -f2-)
+            echo "Current Record: $target_line"
+            break
+        fi
+    done
+
+    echo "Available columns to update: ${non_pk_fields[*]}"
+    updates_to_make=()
+
+    while true; do
+        read -rp "Enter column name to update (or 'done' to finish): " target_field
+
+        if [[ "$target_field" == "done" ]]; then
+            if [[ ${#updates_to_make[@]} -eq 0 ]]; then
+                echo "No changes specified."
+                return 1
+            fi
+            break
+        fi
+
+        if [[ -z "$target_field" ]]; then
+            echo "Column name cannot be empty. Available: ${non_pk_fields[*]}"
+            continue
+        fi
+
+        if [[ "$target_field" == "$pk_col" ]]; then
+            echo "Error: Primary key column '$pk_col' cannot be updated."
+            continue
+        fi
+
+        if [[ -z "${col_indices[$target_field]}" || "$target_field" == "$pk_col" ]]; then
+            echo "Error: Invalid column name '$target_field'. Available: ${non_pk_fields[*]}"
+            continue
+        fi
+
+        while true; do
+            read -rp "Enter the new value for '$target_field': " new_val
+
+            if [[ -z "$new_val" && "$new_val" != "''" && "$new_val" != '""' ]]; then
+                echo "Error: The new value cannot be empty."
+                continue
+            fi
+
+            local expected_type="${types_map[$target_field]}"
+            if [[ "$expected_type" == "int" && ! "$new_val" =~ ^-?[0-9]+$ ]]; then
+                echo "Error: Invalid integer value for '$target_field'."
+                continue
+            fi
+            if [[ "$expected_type" == "string" && "$new_val" =~ : ]]; then
+                echo "Error: String value for '$target_field' cannot contain ':'."
+                continue
+            fi
+
+            updates_to_make["$target_field"]="$new_val"
+            echo "Your updates : $target_field = $new_val"
+            break
+        done
+    done
+
+    loading "Applying updates"
+    awk_assignments=""
+    for field_name in "${!updates_to_make[@]}"; do
+        col_index=${col_indices["$field_name"]}
+        new_val=${updates_to_make["$field_name"]}
+        # Escape backslashes and double quotes within the new value for the awk command string
+        new_val_escaped=$(printf '%s' "$new_val" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')
+        awk_assignments+="\$${col_index} = \"${new_val_escaped}\"; "
+    done
+
+    local tmp_file="${data_file}.tmp"
+    awk -F: -v line_num="$line_number" \
+        'BEGIN { OFS=":" }
+         NR == line_num { '"$awk_assignments"' }
+         { print }' \
+        "$data_file" >"$tmp_file"
+
+    if [[ $? -eq 0 ]]; then
+        mv "$tmp_file" "$data_file"
+        if [[ $? -eq 0 ]]; then
+            echo "Record with '$pk_col' = '$pk_val' updated successfully!"
+        else
+            echo "Error: Update failed"
+            rm -f "$tmp_file"
+            return 1
+        fi
+    else
+        echo "Error: awk command failed during update process."
+        rm -f "$tmp_file"
+        return 1
+    fi
+
+    pause
 }

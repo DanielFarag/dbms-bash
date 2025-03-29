@@ -138,5 +138,5 @@ function pause() {
 }
 
 get_table_columns() {
-    awk -F: '{ print $1 }' "$DB_DIR/$CURRENT_DB/$1.meta"
+    awk -F: '{ print $1 }' "$STORAGE_PATH/$CURRENT_DB/$CURRENT_TABLE.meta"
 }
