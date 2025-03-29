@@ -1,115 +1,107 @@
 #!/bin/bash
 
-function list_table_records {
-    local table_name
+list_table_records() {
     local desired_cols=()
     local filter_col_name=""
     local filter_val=""
     local filter_col_index=""
-    read -p "Enter table name to select from: " table_name
-
-    local metadata_file
     local data_file
-    metadata_file=$(CURRENT_TABLE_META_PATH)
-    data_file=$(CURRENT_TABLE_DATA_PATH)
-    if [[ ! -f "$metadata_file" || ! -f "$data_file" ]]; then
-        echo "Error: Table '$table_name' does not exist!"
+    data_file="$(CURRENT_TABLE_DATA_PATH)"
+
+    if [[ ! -f "$data_file" ]]; then
+        echo "Error: Table data file not found!"
         return 1
     fi
 
-    local header
-    header=$(head -n 1 "$data_file")
-    IFS=':' read -ra fields <<<"$header"
-    unset IFS
-    # mapfile -t -d: fields <<<"$header"
+    mapfile -t fields < <(get_table_columns)
 
-    echo "Available columns: "
-    head -n 1 "$data_file" | tr ":" " "
+    echo "Available columns:"
+    head -n1 "$data_file" | tr ":" " " | sed 's/^/  /'
 
-    read -p "Do you want to retrive all the data 
-            1. All 
-            2. Choose sepcific columns 
-            " proj_input
-
-    if [[ "$proj_input" == 1 ]]; then
-        desired_cols="${fields[*]}"
-    elif [[ "$proj_input" == 2 ]]; then
-        while true; do
-            echo "Enter column names to retrieve (separated by ','): "
-            read -r user_input
-            IFS="," read -ra desired_cols <<<"$user_input"
-            unset IFS
-
-            invalid_columns=()
-            for col in "${desired_cols[@]}"; do
-                if [[ ! "${fields[*]}" =~ $col ]]; then
-                    invalid_columns+=("$col")
-                fi
-            done
-
-            if [[ ${#invalid_columns[@]} -eq 0 ]]; then
-                break
-            else
-                echo "Error: The following columns do not exist in the table: ${invalid_columns[*]}"
-                echo "Please enter valid column names."
-            fi
-        done
-
-    fi
-
-    read -p "Do you want to filter rows based on a column value? (y/n): " filter_choice
-    if [[ "$filter_choice" =~ ^[Yy]$ ]]; then
-        while true; do
-            read -p "Enter the column name to filter on: " filter_col_name
-
-            if echo "${fields[@]}" | grep -wq "$filter_col_name"; then
-                read -p "Enter the filter value: " filter_val
-                break
-            else
-                echo "Error: Column '$filter_col_name' not found in the table!"
-                continue
-            fi
-        done
-    fi
-
-    declare -A columns_dict
-
-    count=1
-    for field in "${fields[@]}"; do
-        if echo "${desired_cols[@]}" | grep -wq "$field"; then
-            columns_dict[$field]=$count
-        fi
-        # if [[ -n "$filter_col_name" && "$filter_col_name" == "$field" ]]; then
-        #     filter_col_index=$count
-        #     echo "$filter_col_name fcn $field fi $count count"
-        # fi
-        if [[ -n "$filter_col_name" ]]; then
-            echo "filter_col_name is not empty: $filter_col_name"
-            if [[ "$filter_col_name" == "$field" ]]; then
-                echo "Match found: $filter_col_name equals $field"
-                filter_col_index=$count
-                echo "Assigned filter_col_index: $filter_col_index (count: $count)"
-            else
-                echo "No match: $filter_col_name does not equal $field"
-                echo "Length of filter_col_name: ${#filter_col_name}"
-                echo "Length of field: ${#field}"
-            fi
-        else
-            echo "filter_col_name is empty"
-        fi
-        ((++count))
+    local proj_input=""
+    while [[ "$proj_input" != "1" && "$proj_input" != "2" ]]; do
+        echo -e "\nSelect data retrieval option:"
+        echo "  1. All columns"
+        echo "  2. Specific columns"
+        read -rp "Enter choice [1-2]: " proj_input
+        [[ "$proj_input" != "1" && "$proj_input" != "2" ]] && echo "Invalid choice. Try again."
     done
 
-    values_array=("${columns_dict[@]}")
-    #sorted_columns_nums=$(printf "%s\n" "${values_array[@]}" | sort -n)
-    sorted_columns_nums=$(sort -n <<<"${values_array[@]}")
-    serialized_array=$(
-        IFS=" "
-        echo "${sorted_columns_nums[*]}"
-    )
+    if [[ "$proj_input" == "1" ]]; then
+        desired_cols=("${fields[@]}")
+    else
+        while true; do
+            read -rp "Enter column names to retrieve (comma separated): " user_input
+            if [[ -z "$user_input" ]]; then
+                echo "Enter at least one column name."
+                continue
+            fi
+            IFS=',' read -ra desired_cols <<<"$user_input"
+            for i in "${!desired_cols[@]}"; do
+                desired_cols[$i]=$(echo "${desired_cols[$i]}" | xargs)
+            done
+            local invalid=0
+            for col in "${desired_cols[@]}"; do
+                if ! printf '%s\n' "${fields[@]}" | grep -qx "$col"; then
+                    echo "Error: Column '$col' does not exist."
+                    invalid=1
+                fi
+            done
+            ((invalid == 0)) && break
+            echo "Enter valid column names."
+        done
+    fi
 
-    echo "filter index $filter_col_index and fv $filter_val"
+    local filter_choice=""
+    while [[ ! "$filter_choice" =~ ^[YyNn]$ ]]; do
+        read -rp "Do you want to filter rows based on a column value? (y/n): " filter_choice
+        [[ ! "$filter_choice" =~ ^[YyNn]$ ]] && echo "Invalid input. Enter y or n."
+    done
 
-    awk -v columns_indexes="$serialized_array" -v filter_col_index="$filter_col_index" -v filter_val="$filter_val" -f ./awk/select_script.awk "$data_file"
-    read -p "Back..."
+    if [[ "$filter_choice" =~ ^[Yy]$ ]]; then
+        while true; do
+            read -rp "Enter the column name to filter on: " filter_col_name
+            filter_col_name=$(echo "$filter_col_name" | xargs)
+            if printf '%s\n' "${fields[@]}" | grep -qx "$filter_col_name"; then
+                read -rp "Enter the filter value: " filter_val
+                filter_val=$(echo "$filter_val" | xargs)
+                if [[ -z "$filter_val" ]]; then
+                    echo "Filter value cannot be empty."
+                    continue
+                fi
+                break
+            else
+                echo "Error: Column '$filter_col_name' not found. Try again."
+            fi
+        done
+    fi
+
+    declare -A col_indices
+    for i in "${!fields[@]}"; do
+        local field="${fields[$i]}"
+        local idx=$((i + 1))
+        if printf '%s\n' "${desired_cols[@]}" | grep -qx "$field"; then
+            col_indices["$field"]=$idx
+        fi
+        if [[ -n "$filter_col_name" && "$filter_col_name" == "$field" ]]; then
+            filter_col_index=$idx
+        fi
+    done
+
+    local indexes=()
+    for index in "${col_indices[@]}"; do
+        indexes+=("$index")
+    done
+    IFS=$'\n' sorted_indexes=($(sort -n <<<"${indexes[*]}"))
+    unset IFS
+    local serialized_array
+    serialized_array=$(printf "%s " "${sorted_indexes[@]}")
+    serialized_array=$(echo "$serialized_array" | sed 's/[[:space:]]*$//')
+
+    awk -v columns_indexes="$serialized_array" \
+        -v filter_col_index="$filter_col_index" \
+        -v filter_val="$filter_val" \
+        -f ./awk/select_script.awk "$data_file"
+
+    pause
 }
