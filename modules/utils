@@ -74,13 +74,13 @@ get_latest_id() {
 # Filter data based on N columns
 get_rows_by_keys() {
     local data=("$@")
-    local length="$#"
-    local columes=""
+    local length="${#data[@]}"
+    local columes=()
 
     for ((i = 0; i < length; i++)); do
         IFS="=" read -r key value <<<"${data[i]}"
-        db_key_index="$(get_column_index $key)"
-        columes+="col_$db_key_index=$value "
+        db_key_index="$(get_column_index "$key")"
+        columes+=("col_$db_key_index=$value") 
     done
 
     awk -F: '
@@ -100,7 +100,7 @@ get_rows_by_keys() {
                 if ($col[i] != val[i]) matchAll = 0;
             }
             if (matchAll) print $0;
-        }' $columes $(CURRENT_TABLE_DATA_PATH)
+        }' "${columes[@]}" "$(CURRENT_TABLE_DATA_PATH)"
 }
 
 loading() {
