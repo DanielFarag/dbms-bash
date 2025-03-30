@@ -16,7 +16,8 @@ list_table_records() {
     mapfile -t fields < <(get_table_columns)
 
     echo "Available columns:"
-    head -n1 "$data_file" | tr ":" " " | sed 's/^/  /'
+
+    get_table_columns | awk -F':' '{printf "%s ", $0}'
 
     local proj_input=""
     while [[ "$proj_input" != "1" && "$proj_input" != "2" ]]; do
@@ -97,6 +98,8 @@ list_table_records() {
     local serialized_array
     serialized_array=$(printf "%s " "${sorted_indexes[@]}")
     serialized_array=$(echo "$serialized_array" | sed 's/[[:space:]]*$//')
+
+    get_table_columns | awk -F':' '{printf "%s | ", $0} END {print ""}'
 
     awk -v columns_indexes="$serialized_array" \
         -v filter_col_index="$filter_col_index" \

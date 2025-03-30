@@ -93,10 +93,7 @@ function create_table {
         fi
     done
 
-    printf "%s\n" "$(
-        IFS=:
-        echo "${columns[*]}"
-    )" >"$data_file"
+    touch "$data_file"
 
     echo "Table '$table_name' created successfully in '$CURRENT_DB'."
     pause

@@ -3,10 +3,12 @@
 create_database() {
 
     title "Create New Database"
-    read -p "name: " dbname
+    read -p "name[0 to exit]: " dbname
 
     dbname="$(echo "$dbname" | sed 's/^ *//;s/ *$//')"  # trimg [start and end]
 
+
+    if [[ "$dbname" == "0" ]]; then return; fi
 
     if [[ ! "$dbname" =~ ^[a-z]+$ ]]; then
 
