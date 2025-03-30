@@ -9,24 +9,27 @@ detete_database() {
 
     read -p "# " option
 
-    if [[  -z $option ]]; then 
-        loading "Invalid option"
-        detete_database
+    if [[ -z "$option" ]]; then loading "No Input Provided"; detete_database; return; fi
+
+    index=$(get_index databases "$option")
+
+    if [[ $index -eq ${#databases[@]} ]]; then return; fi  
+    if [[ $index -lt 0 ]]; then loading "Invalid option"; detete_database; return; fi
+
+    read -rp "Are you sure you want to delete ${databases[index-1]}? (y/n): " confirm
+
+    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+        loading "${databases[index-1]} Is being deleted"
+
+        rm -r $STORAGE_PATH/${databases[index-1]}
+
+        if [[ $? -eq 1 ]]; then
+            loading "failed to delete: ${databases[index-1]}"
+        else
+            loading "${databases[index-1]} Delete Successfully"
+        fi
+    else
+        loading "Action Cancelled"
     fi
-
-
-    if [[ $option -ge $((${#databases[@]})) || $option -le 0 ]]; then
-        return
-    fi
-
-    loading "${databases[option-1]} Is being deleted"
-
-    rm -r $STORAGE_PATH/${databases[option-1]}
-
-
-    if [[ $? -eq 1 ]]; then
-        loading "failed to delete: ${databases[option-1]}"
-
-        detete_database
-    fi
+    detete_database
 }

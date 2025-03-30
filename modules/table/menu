@@ -8,15 +8,16 @@ list_table_actions() {
     print_menu "${table_options[@]}"
 
     read -p "# " type
+    index=$(get_index table_options "$type")
 
-    case $type in
-    1) list_table_records ;;
-    2) insert_table_records ;;
-    3) update_table_records ;;
-    4) delete_table_records ;;
-    5) drop_table ;;
-    6) return ;;
-    *) loading "Invalid option, please try again." ;;
+    case $index in
+        1) list_table_records ;;
+        2) insert_table_records ;;
+        3) update_table_records ;;
+        4) delete_table_records ;;
+        5) drop_table ;;
+        6) return ;;
+        *) loading "Invalid option, please try again" ;;
     esac
 
     list_table_actions

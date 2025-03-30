@@ -13,23 +13,30 @@ list_tables() {
 
     read -p "# " option
 
-    if [[ -z $option ]]; then
-        loading "Invalid option"
-        list_tables
+    if [[ -z "$option" ]]; then
+        loading "No Input Provided";
+        list_tables;
+        return;
     fi
 
-    if [[ $option -ge $((${#_tables[@]})) || $option -le 0 ]]; then
-        return
+    index=$(get_index _tables "$option")
+
+    if [[ $index -eq ${#_tables[@]} ]]; then return; fi  
+    if (( index == ${#_tables[@]} - 1 )); then  
+        create_table;
+        list_tables;
+        return;
+    fi  
+
+    if [[ $index -lt 0 ]]; then
+        loading "Invalid option";
+        list_tables;
+        return;
     fi
 
-    case $option in
-    $((${#_tables[@]} - 1))) create_table ;;
-    *)
-        CURRENT_TABLE=${_tables[option - 1]}
-        list_table_actions
-        CURRENT_TABLE=""
-        ;;
-    esac
+    CURRENT_TABLE=${_tables[index - 1]}
+    list_table_actions
+    CURRENT_TABLE=""
 
     list_tables
 }

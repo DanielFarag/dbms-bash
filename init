@@ -12,14 +12,15 @@ function __init__(){
     print_menu "${main_screen_options[@]}"
 
     read -p "# " option
-    
-    case $option in
+    index=$(get_index main_screen_options "$option")
+
+    case $index in
         1) create_database ;;
         2) list_databases ;;
         3) detete_database ;;
         4) connect_db ;;
         5) loading "Exiting"; return ;;
-        *) echo "Invalid option, please try again." ;;
+        *) loading "Invalid option, please try again" ;;
     esac
     
     __init__

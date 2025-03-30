@@ -137,3 +137,26 @@ function pause() {
 get_table_columns() {
     awk -F: '{ print $1 }' "$(CURRENT_TABLE_META_PATH)"
 }
+
+to_lower() {
+    echo "$1" | tr '[:upper:]' '[:lower:]'
+}
+
+get_index() {
+    local -n arr=$1 
+    local opt=$2
+
+    if [[ "$opt" =~ ^[0-9]+$ ]] && (( opt >= 0 && opt <= ${#arr[@]} )); then
+        echo "$opt"
+        return
+    fi
+
+    for i in "${!arr[@]}"; do
+        if [[ "$(to_lower "${arr[i]}")" == "$(to_lower "$opt")" ]]; then
+            echo "$((i+1))"
+            return
+        fi
+    done
+
+    echo "-1"  
+}
