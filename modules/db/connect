@@ -3,7 +3,7 @@
 connect_db() {
     local databases=($(databases) "Return to Databases")
 
-    title "Connect to: "
+    title "Connect To DB"
 
     print_menu "${databases[@]}"
 

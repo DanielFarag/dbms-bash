@@ -2,6 +2,11 @@
 list_tables() {
     local _tables=($(tables) "Create Table" "Return to Databases")
 
+    if [[ ${#_tables[@]} -eq 2 ]]; then
+        title "$CURRENT_DB"
+        loading "No Tables Exist"
+    fi
+
     title "Display Tables: ($CURRENT_DB)"
 
     print_menu "${_tables[@]}"

@@ -21,13 +21,10 @@ databases() {
 }
 
 tables() {
-    db_path=$(CURRENT_DB_PATH)
-    tables=$(find "$db_path" -name "*.meta" | awk -F'/' '{print $NF}' | sed "s/\.meta$//")
-
-    if [[ -z "$tables" ]]; then
-        echo "The database is empty."
-    fi
-    echo "$tables"
+    for dir in $(CURRENT_DB_PATH)/*.meta; do
+        [ -e "$dir" ] || continue
+        basename "$dir" | cut -d '.' -f1
+    done
 }
 
 fetch_table_columns() {
@@ -138,5 +135,5 @@ function pause() {
 }
 
 get_table_columns() {
-    awk -F: '{ print $1 }' "$STORAGE_PATH/$CURRENT_DB/$CURRENT_TABLE.meta"
+    awk -F: '{ print $1 }' "$(CURRENT_TABLE_META_PATH)"
 }
