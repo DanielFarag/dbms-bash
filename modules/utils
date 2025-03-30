@@ -160,3 +160,14 @@ get_index() {
 
     echo "-1"  
 }
+
+
+remove_row() {
+    local record="$1"
+    local file_path="$(CURRENT_TABLE_DATA_PATH)"
+
+    line_number=$(awk -v record="$record" '$0 == record {print NR}' "$file_path")
+
+    sed -i "${line_number}d" "$file_path"
+
+}
