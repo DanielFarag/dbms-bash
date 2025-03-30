@@ -3,8 +3,6 @@
 insert_table_records(){
     local content=$(sed -n '$p' $(CURRENT_TABLE_DATA_PATH))  
 
-    local id="$(get_latest_id)"
-
     local columns=($(fetch_table_columns))
 
     local newRecord=()
@@ -19,16 +17,19 @@ insert_table_records(){
         IFS=':' read -r column type pk <<< "${columns[$current]}"
 
         local default_value=""
-        if [[ "$pk" == "primary_key" ]]; then
-            default_value="$id"
-            read -p "$column ($type) [$default_value]: " default_value
-        else
-            read -p "$column ($type): " default_value
+
+        prompt="$column ($type)"
+        
+        local pk_value=""
+        if [[ "$pk" == "primary_key" && "$type" == "int" ]]; then
+            pk_value="$(get_latest_id)"
+            prompt+=" [$pk_value]"
         fi
 
+        read -p "$prompt : " default_value
 
-        if [[ -z "$default_value" && "$pk" == "primary_key" ]]; then
-            default_value="$id"
+        if [[ -z "$default_value" &&  ! -z "$pk_value" ]]; then
+            default_value="$pk_value"
         fi
 
 
@@ -45,6 +46,16 @@ insert_table_records(){
         if [[ "$type" == "string" && ! $default_value =~ ^[A-Za-z0-9\ ]+$ ]]; then
             loading "Value must be alphanmeric string [spaces allowed]!"
             continue
+        fi
+
+        if [[ "$pk" == "primary_key" ]]; then
+            pk_key="$(get_primary_key)"
+            data=($(get_rows_by_keys "$pk_key=$default_value"))
+            if [[ "${#data[@]}" -ne "0" ]]; then
+                loading "Primary Key must be unique!"
+                continue
+            fi
+
         fi
 
         ((current++))
