@@ -26,6 +26,12 @@ delete_table_records(){
 
 delete_all(){
     local -a records=($(get_rows_by_keys))
+
+    if [[ ${#records[@]} -eq 0 ]]; then
+        loading "Table is empty"
+        return
+    fi
+
     read -p "Confirm Delete [ ${#records[@]} records ] [y-n]: " confirm
 
     if [[ "$confirm" =~ ^(y|Y)$ ]]; then
@@ -87,6 +93,11 @@ selection_delete(){
     done
 
     local records=($(get_rows_by_keys ${search_criteria[@]}))
+
+    if [[ ${#records[@]} -eq 0 ]]; then
+        loading "No matching records"
+        return
+    fi
 
     echo "======================================="
     for row in "${records[@]}"; do

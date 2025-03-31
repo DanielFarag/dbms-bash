@@ -1,30 +1,37 @@
 # DBMS Shell Script Project
 
 ## Overview
-This project is a simple **Database Management System (DBMS)** implemented using **Bash scripts**. It provides basic functionalities like creating, listing, and deleting databases, as well as managing tables and executing SQL-like commands.
+This project is a simple **Database Management System (DBMS)** implemented using **Bash scripts**. It provides basic functionalities like creating, listing, and deleting databases, as well as managing tables.
 
 ## Project Structure
 ```
-./init                   # Main entry script
-./modules/
-  ├── load              # Loads required modules
-  ├── vars              # Contains global variables
-  ├── utils             # Utility functions
-  ├── db/
-  │   ├── connect       # Handles database connections
-  │   ├── create        # Creates databases
-  │   ├── delete        # Deletes databases
-  │   ├── fetch         # List all databases
-  ├── table/
-  │   ├── fetch         # List tables using database name
-  │   ├── create        # Creates tables
-  │   ├── menu          # Handles table menu interactions
-  │   ├── data/
-  │   │   ├── insert    # Inserts data into tables
-  │   │   ├── delete    # Deletes data from tables
-  │   │   ├── update    # Updates table data
-  │   │   ├── index     # Fetch table Records
-  ├── sql               # Executes SQL-like queries
+.
+├── awk  
+│   └── select_script.awk   # AWK script for selecting data  
+├── init                    # Initialization scripts or configurations  
+├── modules                 # Core modules handling database and table operations  
+│   ├── db                  # Database-related operations  
+│   │   ├── connect         # Handles database connections  
+│   │   ├── create          # Creates a new database  
+│   │   ├── delete          # Deletes a database  
+│   │   └── fetch           # Retrieves databases  
+│   ├── load                # Loads required resources or configurations  
+│   ├── table               # Table management operations  
+│   │   ├── create          # Creates new tables  
+│   │   ├── data            # Handles table data operations  
+│   │   │   ├── delete      # Deletes table data  
+│   │   │   ├── index       # list table records  
+│   │   │   ├── insert      # Inserts data into tables  
+│   │   │   └── update      # Updates table record data  
+│   │   ├── drop            # Drops tables  
+│   │   ├── fetch           # Retrieves tables  
+│   │   └── menu            # Table-related menu operations  
+│   ├── utils               # Utility scripts and helpers  
+│   └── vars                # Stores configuration variables  
+├── storage                 # Storage directory for data files  
+│   └── db                  # db data storage  
+│       ├── table.data      # User data file  
+│       └── table.meta      # Metadata for user data  
 ```
 
 ## Usage
@@ -40,7 +47,6 @@ This project is a simple **Database Management System (DBMS)** implemented using
 - **Database Operations:** Create, list, and delete databases.
 - **Table Management:** Create and fetch table data.
 - **Data Handling:** Insert, delete, update, and list data.
-- **SQL-like Queries:** Execute basic commands.
 
 ## Notes
 - Databases and tables are stored as files within the project directory.
