@@ -5,32 +5,25 @@ create_database() {
     title "Create New Database"
     read -p "name[0 to exit]: " dbname
 
-    dbname="$(echo "$dbname" | sed 's/^ *//;s/ *$//')"  # trimg [start and end]
-
-
+    dbname="$(echo "$dbname" | sed 's/^ *//;s/ *$//')"
     if [[ "$dbname" == "0" ]]; then return; fi
 
-    if [[ ! "$dbname" =~ ^[a-z]+$ ]]; then
-
-        loading "Database name must contain only lowercase alphabetical letters"
-    
-        create_database ## Recall the function [ Recursion ]
-
+    if ! is_valid_name "$dbname" "Database"; then
+        pause
+        create_database
         return
     fi
 
-
     local path="$STORAGE_PATH/$dbname"
-
 
     if [[ -d "$path" ]]; then
         loading "$Database Already exists"
 
-        create_database ## Recall the function [ Recursion ]
+        create_database
         return
     fi
 
     mkdir -p "$path"
-    
+
     loading "Database $dbname created successfully"
 }
