@@ -1,14 +1,54 @@
 #!/bin/bash
 
-delete_table_records() {
+delete_table_records(){
 
-    title "Delete record from table: $CURRENT_TABLE ( $CURRENT_DB )"
+    title "Delete records from table: $CURRENT_TABLE ( $CURRENT_DB )"
 
+    local delection_option=("Delete All" "By PK" "By Selection" "Return to Action")
+
+    print_menu "${delection_option[@]}"
+
+    read -p "# " option
+
+    index=$(get_index delection_option "$option")
+
+    case $index in
+        1) delete_all ;;
+        2) by_pk ;;
+        3) selection_delete ;;
+        4) return ;;
+        *) loading "Invalid option, please try again" ;;
+    esac
+
+    delete_table_records
+}
+
+
+delete_all(){
+    local -a records=($(get_rows_by_keys))
+
+    if [[ ${#records[@]} -eq 0 ]]; then
+        loading "Table is empty"
+        return
+    fi
+
+    read -p "Confirm Delete [ ${#records[@]} records ] [y-n]: " confirm
+
+    if [[ "$confirm" =~ ^(y|Y)$ ]]; then
+        > "$(CURRENT_TABLE_DATA_PATH)"
+
+        loading "Record Deleted"
+    else
+        loading "Request declined"
+    fi
+}
+
+by_pk(){
     local pk_name="$(get_primary_key)"
 
     read -p "$pk_name: " pk_value
 
-    if [[ "$pk_value" -eq "0" ]]; then
+    if [[ "$pk_value" == "0" ]]; then
         return
     fi
 
@@ -20,13 +60,57 @@ delete_table_records() {
         return
     fi
 
-    echo Delete Record \( $record \)
 
+    echo Delete Record \( $record \)
+    
     read -p "Confirm Delete [y-n]: " confirm
 
-    title "Record:  $record "
     if [[ "$confirm" =~ ^(y|Y)$ ]]; then
-        sed -i /^$record$/d $(CURRENT_TABLE_DATA_PATH)
+        remove_row "$record"
+
+        loading "Record Deleted"
+    else
+        loading "Request declined"
+    fi
+}
+
+selection_delete(){
+
+    local columes=( $(fetch_table_columns) )
+
+    search_criteria=()
+    
+    for col in "${columes[@]}"; do
+        IFS=":" read -r key value pk <<<"$col"
+
+        if [[ "$pk" != "primary_key" ]]; then
+            read -p "$key: " value
+            if [[ ! -z $value ]]; then
+                search_criteria+=("$key=$value")
+            fi
+        fi
+
+    done
+
+    local records=($(get_rows_by_keys ${search_criteria[@]}))
+
+    if [[ ${#records[@]} -eq 0 ]]; then
+        loading "No matching records"
+        return
+    fi
+
+    echo "======================================="
+    for row in "${records[@]}"; do
+        echo "$row"
+    done
+    echo "======================================="
+    read -p "Confirm Delete these records [y-n]: " confirm
+
+    if [[ "$confirm" =~ ^(y|Y)$ ]]; then
+
+        for row in "${records[@]}"; do
+            remove_row "$row"
+        done
 
         loading "Record Deleted"
     else
