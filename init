@@ -20,7 +20,7 @@ function __init__(){
         3) detete_database ;;
         4) connect_db ;;
         5) loading "Exiting"; return ;;
-        *) loading "Invalid option, please try again" ;;
+        *) error_loading "Invalid option, please try again" ;;
     esac
     
     __init__

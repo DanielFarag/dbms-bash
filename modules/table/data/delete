@@ -25,7 +25,7 @@ delete_table_records(){
 
 
 delete_all(){
-    local -a records=($(get_rows_by_keys))
+    mapfile -t records < <(get_rows_by_keys)
 
     if [[ ${#records[@]} -eq 0 ]]; then
         loading "Table is empty"
@@ -37,7 +37,7 @@ delete_all(){
     if [[ "$confirm" =~ ^(y|Y)$ ]]; then
         > "$(CURRENT_TABLE_DATA_PATH)"
 
-        loading "Record Deleted"
+        success_loading "Record Deleted"
     else
         loading "Request declined"
     fi
@@ -52,23 +52,24 @@ by_pk(){
         return
     fi
 
-    local record="$(get_rows_by_keys "$pk_name=$pk_value")"
+    mapfile -t records < <(get_rows_by_keys "$pk_name:$pk_value")
 
-    if [[ -z "$record" ]]; then
-        loading "$pk_name does not exist"
+    if [[ ${#records[@]} -eq 0 ]]; then
+        error_loading "$pk_name does not exist"
         delete_table_records
         return
     fi
 
 
-    echo Delete Record \( $record \)
+    echo -n "Delete Record: "
+    color_text cyan "${records[0]}"
     
     read -p "Confirm Delete [y-n]: " confirm
 
     if [[ "$confirm" =~ ^(y|Y)$ ]]; then
-        remove_row "$record"
+        remove_row "${records[0]}"
 
-        loading "Record Deleted"
+        success_loading "Record Deleted"
     else
         loading "Request declined"
     fi
@@ -86,13 +87,13 @@ selection_delete(){
         if [[ "$pk" != "primary_key" ]]; then
             read -p "$key: " value
             if [[ ! -z $value ]]; then
-                search_criteria+=("$key=$value")
+                search_criteria+=("$key:$value")
             fi
         fi
 
     done
 
-    local records=($(get_rows_by_keys ${search_criteria[@]}))
+    mapfile -t records < <(get_rows_by_keys "${search_criteria[@]}")
 
     if [[ ${#records[@]} -eq 0 ]]; then
         loading "No matching records"
@@ -112,7 +113,7 @@ selection_delete(){
             remove_row "$row"
         done
 
-        loading "Record Deleted"
+        success_loading "Record Deleted"
     else
         loading "Request declined"
     fi

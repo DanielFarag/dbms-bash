@@ -17,7 +17,7 @@ create_database() {
     local path="$STORAGE_PATH/$dbname"
 
     if [[ -d "$path" ]]; then
-        loading "$Database Already exists"
+        error_loading "Database ($dbname) Already exists"
 
         create_database
         return
@@ -25,5 +25,5 @@ create_database() {
 
     mkdir -p "$path"
 
-    loading "Database $dbname created successfully"
+    success_loading "Database ($dbname) created successfully" 
 }

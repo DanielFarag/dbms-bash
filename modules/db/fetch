@@ -10,11 +10,14 @@ list_databases() {
         return
     fi
 
-    local count=1
-    for db in $(databases); do
-        echo "$count) $db"
-        ((count++))
-    done
+    color_wrap yellow
+        local count=1
+        for db in $(databases); do
+            echo "$count) $db"
+            ((count++))
+        done
+    endwrap
+
 
     read -p "Back ..."
 }

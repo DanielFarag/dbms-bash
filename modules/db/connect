@@ -9,12 +9,12 @@ connect_db() {
 
     read -p "# " option
 
-    if [[ -z "$option" ]]; then loading "No Input Provided"; connect_db; return; fi
+    if [[ -z "$option" ]]; then error_loading "No Input Provided"; connect_db; return; fi
 
     index=$(get_index databases "$option")
 
     if [[ $index -eq ${#databases[@]} ]]; then return; fi  
-    if [[ $index -lt 0 ]]; then loading "Invalid option"; connect_db; return; fi
+    if [[ $index -lt 0 ]]; then error_loading "Invalid option"; connect_db; return; fi
 
     CURRENT_DB=${databases[index - 1]}
     list_tables

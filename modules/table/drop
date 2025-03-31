@@ -6,7 +6,7 @@ drop_table() {
     meta_file="$(CURRENT_TABLE_META_PATH)"
 
     if [[ ! -f "$data_file" ]]; then
-        echo "Error: Table data file not found!"
+        error "Table data file not found!"
         return 1
     fi
 
@@ -16,7 +16,7 @@ drop_table() {
         if [[ "$confirm" =~ ^[YyNn]$ ]]; then
             break
         else
-            echo "Invalid input. Please enter y or n."
+            error "Invalid input. Please enter y or n."
         fi
     done
 
@@ -29,10 +29,10 @@ drop_table() {
     rm -f "$meta_file"
 
     if [[ $? -eq 0 ]]; then
-        loading "Table dropped successfully"
+        success_loading "Table dropped successfully"
         pause
     else
-        echo "Error: Failed to drop the table."
+        error "Failed to drop the table."
         return 1
     fi
 }

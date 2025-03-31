@@ -17,7 +17,7 @@ list_table_actions() {
         4) delete_table_records ;;
         5) drop_table ;;
         6) return ;;
-        *) loading "Invalid option, please try again" ;;
+        *) error_loading "Invalid option, please try again" ;;
     esac
 
     list_table_actions

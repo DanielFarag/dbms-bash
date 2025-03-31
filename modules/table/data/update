@@ -10,7 +10,7 @@ update_table_records() {
     data_file=$(CURRENT_TABLE_DATA_PATH)
 
     if [[ ! -f "$metadata_file" || ! -f "$data_file" ]]; then
-        echo "Error: Table '$CURRENT_TABLE' data or metadata file not found."
+        error "Table '$CURRENT_TABLE' data or metadata file not found."
         return 1
     fi
 
@@ -18,7 +18,7 @@ update_table_records() {
 
     pk_col=$(awk -F: '$3 == "primary_key" { print $1; exit }' "$metadata_file")
     if [[ -z "$pk_col" ]]; then
-        echo "Error: There is no primary key for table '$CURRENT_TABLE'."
+        error "There is no primary key for table '$CURRENT_TABLE'."
         return 1
     fi
 
@@ -39,7 +39,7 @@ update_table_records() {
     while true; do
         read -rp "Enter the primary key value for column '$pk_col': " pk_val
         if [[ -z "$pk_val" ]]; then
-            echo "Error: Primary key value cannot be empty."
+            error "Primary key value cannot be empty."
             continue
         fi
 
@@ -48,19 +48,21 @@ update_table_records() {
             '$col_idx == pk { print NR, $0; exit }' "$data_file")
 
         if [[ -z "$output" ]]; then
-            echo "Error: No record found with '$pk_col' = '$pk_val'."
+            error "No record found with '$pk_col' = '$pk_val'."
             read -rp "Try another PK value? (y/n): " choice
             [[ "$choice" =~ ^[Yy]$ ]] || return 1
             continue
         else
             line_number=$(echo "$output" | cut -d' ' -f1)
             target_line=$(echo "$output" | cut -d' ' -f2-)
-            echo "Current Record: $target_line"
+            echo -n "Current Record: "
+            color_text "cyan" "$target_line"
             break
         fi
     done
 
-    echo "Available columns to update: ${non_pk_fields[*]}"
+    echo -en "Available columns to update: " 
+    color_text green "${non_pk_fields[*]}"
     updates_to_make=()
 
     while true; do
@@ -80,12 +82,12 @@ update_table_records() {
         fi
 
         if [[ "$target_field" == "$pk_col" ]]; then
-            echo "Error: Primary key column '$pk_col' cannot be updated."
+            error "Primary key column '$pk_col' cannot be updated."
             continue
         fi
 
         if [[ -z "${col_indices[$target_field]}" || "$target_field" == "$pk_col" ]]; then
-            echo "Error: Invalid column name '$target_field'. Available: ${non_pk_fields[*]}"
+            error "Invalid column name '$target_field'. Available: ${non_pk_fields[*]}"
             continue
         fi
 
@@ -93,22 +95,23 @@ update_table_records() {
             read -rp "Enter the new value for '$target_field': " new_val
 
             if [[ -z "$new_val" && "$new_val" != "''" && "$new_val" != '""' ]]; then
-                echo "Error: The new value cannot be empty."
+                error "The new value cannot be empty."
                 continue
             fi
 
             local expected_type="${types_map[$target_field]}"
-            if [[ "$expected_type" == "int" && ! "$new_val" =~ ^-?[0-9]+$ ]]; then
-                echo "Error: Invalid integer value for '$target_field'."
+            if [[ "$expected_type" == "int" ]] && ! is_valid_number "$new_val"; then
+                error "Invalid integer value for '$target_field'."
                 continue
             fi
-            if [[ "$expected_type" == "string" && "$new_val" =~ : ]]; then
-                echo "Error: String value for '$target_field' cannot contain ':'."
+            if [[ "$expected_type" == "string" ]] && ! is_valid_string "$new_val"; then
+                error "String value for '$target_field: can contains only alphanumeric, spaces, _,-@#$&"
                 continue
             fi
 
             updates_to_make["$target_field"]="$new_val"
-            echo "Your updates : $target_field = $new_val"
+            echo -n "Your updates : " 
+            color_text cyan "$target_field = $new_val"
             break
         done
     done
@@ -133,14 +136,14 @@ update_table_records() {
     if [[ $? -eq 0 ]]; then
         mv "$tmp_file" "$data_file"
         if [[ $? -eq 0 ]]; then
-            echo "Record with '$pk_col' = '$pk_val' updated successfully!"
+            success "Record with '$pk_col' = '$pk_val' updated successfully!"
         else
-            echo "Error: Update failed"
+            error "Update failed"
             rm -f "$tmp_file"
             return 1
         fi
     else
-        echo "Error: awk command failed during update process."
+        error "awk command failed during update process."
         rm -f "$tmp_file"
         return 1
     fi

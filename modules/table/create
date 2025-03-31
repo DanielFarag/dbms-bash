@@ -17,7 +17,7 @@ function create_table {
         metadata_file=$(CURRENT_TABLE_META_PATH)
         data_file=$(CURRENT_TABLE_DATA_PATH)
         if [[ -f "$metadata_file" || -f "$data_file" ]]; then
-            echo "Error: Table '$table_name' already exists!"
+            error "Table '$table_name' already exists!"
             continue
         fi
         break
@@ -29,7 +29,7 @@ function create_table {
         read -p "Add column (name:type) or 'done': " col_input
         if [[ "$col_input" == "done" ]]; then
             if [[ "$column_added" == false ]]; then
-                echo "Error: Please add at least one column."
+                error "Please add at least one column."
             else
                 break
             fi
@@ -38,7 +38,7 @@ function create_table {
         IFS=':' read -r col_name col_type <<<"$col_input"
 
         if [[ -z "$col_name" || -z "$col_type" ]]; then
-            echo "Error: Invalid format. Use 'name:type' (e.g., age:int)."
+            error "Invalid format. Use 'name:type' (e.g., age:int)."
             continue
         fi
 
@@ -47,7 +47,7 @@ function create_table {
         fi
 
         if [[ " ${columns[*]} " =~ " $col_name " ]]; then
-            echo "Error: Column '$col_name' already exists."
+            error "Column '$col_name' already exists."
             continue
         fi
 
@@ -55,7 +55,7 @@ function create_table {
         1 | int) col_type="int" ;;
         2 | string) col_type="string" ;;
         *)
-            echo "Error: Invalid type. Use 1 (int) or 2 (string)."
+            error "Invalid type. Use 1 (int) or 2 (string)."
             continue
             ;;
         esac
@@ -66,7 +66,7 @@ function create_table {
     done
 
     if [[ "${#columns[@]}" -eq 0 ]]; then
-        echo "Error: No columns defined. Aborting."
+        error "No columns defined. Aborting."
         return 1
     fi
 
@@ -81,7 +81,7 @@ function create_table {
             valid_pk=true
             break
         else
-            echo "Error: '$PK_col' is not a valid column name. Try again."
+            error "'$PK_col' is not a valid column name. Try again."
         fi
     done
 
@@ -95,6 +95,6 @@ function create_table {
 
     touch "$data_file"
 
-    echo "Table '$table_name' created successfully in '$CURRENT_DB'."
+    success "Table '$table_name' created successfully in '$CURRENT_DB'."
     pause
 }

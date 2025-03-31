@@ -9,7 +9,7 @@ list_table_records() {
     data_file="$(CURRENT_TABLE_DATA_PATH)"
 
     if [[ ! -f "$data_file" ]]; then
-        echo "Error: Table data file not found!"
+        error "Table data file not found!"
         return 1
     fi
 
@@ -17,13 +17,19 @@ list_table_records() {
 
     echo "Available columns:"
 
+    color_wrap yellow
     get_table_columns | awk -F':' '{printf "%s ", $0}'
+    endwrap
 
     local proj_input=""
     while [[ "$proj_input" != "1" && "$proj_input" != "2" ]]; do
+       
         echo -e "\nSelect data retrieval option:"
-        echo "  1. All columns"
-        echo "  2. Specific columns"
+        color_wrap cyan
+            echo "  1. All columns"
+            echo "  2. Specific columns"
+        endwrap
+
         read -rp "Enter choice [1-2]: " proj_input
         [[ "$proj_input" != "1" && "$proj_input" != "2" ]] && echo "Invalid choice. Try again."
     done
@@ -44,7 +50,7 @@ list_table_records() {
             local invalid=0
             for col in "${desired_cols[@]}"; do
                 if ! printf '%s\n' "${fields[@]}" | grep -qx "$col"; then
-                    echo "Error: Column '$col' does not exist."
+                    error "Column '$col' does not exist."
                     invalid=1
                 fi
             done
@@ -72,7 +78,7 @@ list_table_records() {
                 fi
                 break
             else
-                echo "Error: Column '$filter_col_name' not found. Try again."
+                error "Column '$filter_col_name' not found. Try again."
             fi
         done
     fi
@@ -99,12 +105,17 @@ list_table_records() {
     serialized_array=$(printf "%s " "${sorted_indexes[@]}")
     serialized_array=$(echo "$serialized_array" | sed 's/[[:space:]]*$//')
 
-    get_table_columns | awk -F':' '{printf "%s | ", $0} END {print ""}'
+    color_wrap yellow
+    printf "%s | " "${desired_cols[@]}" 
+    echo
+    endwrap
 
+    color_wrap cyan
     awk -v columns_indexes="$serialized_array" \
         -v filter_col_index="$filter_col_index" \
         -v filter_val="$filter_val" \
         -f ./awk/select_script.awk "$data_file"
+    endwrap
 
     pause
 }

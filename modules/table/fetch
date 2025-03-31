@@ -14,7 +14,7 @@ list_tables() {
     read -p "# " option
 
     if [[ -z "$option" ]]; then
-        loading "No Input Provided";
+        error_loading "No Input Provided";
         list_tables;
         return;
     fi
@@ -29,7 +29,7 @@ list_tables() {
     fi  
 
     if [[ $index -lt 0 ]]; then
-        loading "Invalid option";
+        error_loading "Invalid option";
         list_tables;
         return;
     fi

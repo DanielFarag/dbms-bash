@@ -2,8 +2,8 @@
 
 title() {
     clear
-    echo "Welcome to our DB Management System:"
-    echo -e "\n===== $1 ====="
+    color_text green "Welcome to our DB Management System"
+    color_text yellow "\n===== $1 ====="
 }
 
 setup() {
@@ -78,7 +78,7 @@ get_rows_by_keys() {
     local columes=()
 
     for ((i = 0; i < length; i++)); do
-        IFS="=" read -r key value <<<"${data[i]}"
+        IFS=":" read -r key value <<<"${data[i]}"
         db_key_index="$(get_column_index "$key")"
         columes+=("col_$db_key_index=$value") 
     done
@@ -104,9 +104,17 @@ get_rows_by_keys() {
 }
 
 loading() {
-    echo -n "$1 "
+    color="cyan"
+    text="$1"
+
+    if [[ ! -z "$2" ]]; then
+        color="$2"
+    fi
+
+    color_text "$color" "$text" "-ne"
+
     for i in {1..5}; do
-        echo -n "."
+        color_text "$color" "." "-ne"
         sleep 0.4
     done
     echo
@@ -114,18 +122,19 @@ loading() {
 
 print_menu() {
     local i=1
-
+    color_wrap yellow
     for action in "$@"; do
         printf "%d) %s\n" "$i" "$action"
         ((i++))
     done
+    endwrap
 }
 
 function is_valid_name() {
     if [[ $1 =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
         return 0
     else
-        echo "Error: $2 name can only contain letters, numbers, or underscore and should start with a letter and it should NOT contain spaces."
+        color_text red "$2 name can only contain letters, numbers, or underscore and should start with a letter and it should NOT contain spaces."
         return 1
     fi
 }
@@ -170,4 +179,72 @@ remove_row() {
 
     sed -i "${line_number}d" "$file_path"
 
+}
+
+function is_valid_string() {
+    local pattern='^[A-Za-z0-9 _,@#$&-.]+$'
+
+    [[ "$1" =~ $pattern ]]
+}
+
+function is_valid_number() {
+    local pattern='^-?[0-9]+$'
+    [[ "$1" =~ $pattern ]]
+}
+
+color_text() {
+    local options="-e"  
+
+    if [[ -n "$3" ]]; then
+        options="$3" 
+    fi
+
+    local color_code
+    case "$1" in
+        black)   color_code="\e[30m" ;;
+        red)     color_code="\e[31m" ;;
+        green)   color_code="\e[32m" ;;
+        yellow)  color_code="\e[33m" ;;
+        blue)    color_code="\e[34m" ;;
+        magenta) color_code="\e[35m" ;;
+        cyan)    color_code="\e[36m" ;;
+        white)   color_code="\e[37m" ;;
+        *)       color_code="\e[0m"  ;;
+    esac
+
+    echo $options "${color_code}$2\e[0m"
+}
+
+function error(){
+    color_text "red" "$1"
+}
+
+function success(){
+    color_text "green" "$1"
+}
+
+function error_loading(){
+    loading "$1" "red"
+}
+
+function success_loading(){
+    loading "$1" "green"
+}
+
+function color_wrap() {
+    case "$1" in
+        black)   echo -ne "\e[30m" ;;
+        red)     echo -ne "\e[31m" ;;
+        green)   echo -ne "\e[32m" ;;
+        yellow)  echo -ne "\e[33m" ;;
+        blue)    echo -ne "\e[34m" ;;
+        magenta) echo -ne "\e[35m" ;;
+        cyan)    echo -ne "\e[36m" ;;
+        white)   echo -ne "\e[37m" ;;
+        *)       echo -ne "\e[0m"  ;;
+    esac
+}
+
+function endwrap() {
+    echo -ne "\e[0m"
 }
